@@ -96,3 +96,7 @@ coverage/
 .cache/
 *.bak
 *.orig
+
+#Demo app 
+/demo
+demo
