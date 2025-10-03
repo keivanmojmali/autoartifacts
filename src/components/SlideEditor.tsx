@@ -2,15 +2,20 @@ import React, { useEffect, useRef } from "react";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { schema } from "../schema"; // Updated path
+import '../styles.css';
 
 interface SlideEditorProps {
   content: any; // ProseMirror JSON
   onChange?: (json: any) => void;
+  editorTheme?: 'light' | 'dark' | 'presentation' | string;
+  editorStyles?: string;
 }
 
 export const SlideEditor: React.FC<SlideEditorProps> = ({
   content,
   onChange,
+  editorTheme = 'light',
+  editorStyles = ''
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -46,5 +51,7 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({
     };
   }, []);
 
-  return <div ref={editorRef} />;
+  const editorClassName = `autoartifacts-editor theme-${editorTheme} ${editorStyles}`.trim();
+
+  return <div ref={editorRef} className={editorClassName} />;
 };

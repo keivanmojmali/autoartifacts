@@ -1,0 +1,62 @@
+/* Base editor wrapper */
+.autoartifacts-editor {
+  position: relative;
+}
+
+/* Default slide styles */
+.slide {
+  border: 1px solid #e0e0e0;
+  margin: 20px 0;
+  padding: 20px;
+  background: white;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+  margin: 10px 0;
+}
+
+.column {
+  flex: 1;
+  min-width: 0;
+}
+
+.ProseMirror {
+  outline: none;
+  min-height: 100px;
+}
+
+/* Light theme (default) */
+.autoartifacts-editor.theme-light {
+  background: #ffffff;
+}
+
+.autoartifacts-editor.theme-light .slide {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+/* Dark theme */
+.autoartifacts-editor.theme-dark {
+  background: #1e293b;
+}
+
+.autoartifacts-editor.theme-dark .slide {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+/* Presentation theme */
+.autoartifacts-editor.theme-presentation {
+  background: #000000;
+  padding: 40px;
+}
+
+.autoartifacts-editor.theme-presentation .slide {
+  aspect-ratio: 16 / 9;
+  max-width: 1200px;
+  margin: 40px auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}

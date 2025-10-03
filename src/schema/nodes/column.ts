@@ -1,7 +1,18 @@
 export const column = {
   content: "block+",
+  attrs: {
+    className: { default: "" },
+  },
   parseDOM: [{ tag: "div.column" }],
-  toDOM() {
-    return ["div", { class: "column" }, 0];
+  toDOM(node: any) {
+    const { className } = node.attrs;
+    return [
+      "div",
+      {
+        class: `column ${className}`.trim(),
+        "data-node-type": "column",
+      },
+      0,
+    ];
   },
 };

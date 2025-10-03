@@ -9,9 +9,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "prosemirror-model": "^1.25.3",
     "prosemirror-schema-basic": "^1.2.4",
     "prosemirror-state": "^1.4.3",
-    "prosemirror-view": "^1.41.2"
+    "prosemirror-view": "^1.41.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

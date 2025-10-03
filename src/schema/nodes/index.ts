@@ -1,5 +1,5 @@
 import { nodes as basicNodes } from "prosemirror-schema-basic";
-import { slide } from "./slide";
+import { slide } from "./slides";
 import { row } from "./row";
 import { column } from "./column";
 
