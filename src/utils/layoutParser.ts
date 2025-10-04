@@ -6,16 +6,20 @@ export function parseLayout(layout: string, columnCount: number): number[] {
 
   // Validate format
   if (!/^\d+(-\d+)*$/.test(layout)) {
-    console.warn(`Invalid layout format '${layout}'. Using equal distribution.`);
+    console.warn(
+      `Invalid layout format '${layout}'. Using equal distribution.`
+    );
     return new Array(columnCount).fill(1);
   }
 
   // Parse ratios
-  const ratios = layout.split('-').map(Number);
+  const ratios = layout.split("-").map(Number);
 
   // Check column count match
   if (ratios.length !== columnCount) {
-    console.warn(`Layout '${layout}' expects ${ratios.length} columns but found ${columnCount}. Using equal distribution.`);
+    console.warn(
+      `Layout '${layout}' expects ${ratios.length} columns but found ${columnCount}. Using equal distribution.`
+    );
     return new Array(columnCount).fill(1);
   }
 

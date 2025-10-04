@@ -9,11 +9,13 @@ export const column = {
   },
   parseDOM: [{ tag: "div.column" }],
   toDOM(node: any) {
-    const { className, contentMode, verticalAlign, horizontalAlign, padding } = node.attrs;
+    const { className, contentMode, verticalAlign, horizontalAlign, padding } =
+      node.attrs;
     return [
       "div",
       {
-        class: `column ${className} content-${contentMode} v-align-${verticalAlign} h-align-${horizontalAlign} padding-${padding}`.trim(),
+        class:
+          `column ${className} content-${contentMode} v-align-${verticalAlign} h-align-${horizontalAlign} padding-${padding}`.trim(),
         "data-node-type": "column",
       },
       0,

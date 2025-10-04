@@ -1,26 +1,26 @@
 export const listItem = {
   attrs: {
-    className: { default: '' }
+    className: { default: "" },
   },
-  content: 'paragraph block*', // can contain paragraph and other blocks
+  content: "paragraph block*", // can contain paragraph and other blocks
   defining: true,
   parseDOM: [
     {
-      tag: 'li',
+      tag: "li",
       getAttrs: (dom: HTMLElement) => ({
-        className: dom.className || ''
-      })
-    }
+        className: dom.className || "",
+      }),
+    },
   ],
   toDOM(node: any) {
     const { className } = node.attrs;
     return [
-      'li',
+      "li",
       {
         class: `list-item ${className}`.trim(),
-        'data-node-type': 'list-item'
+        "data-node-type": "list-item",
       },
-      0
+      0,
     ];
-  }
+  },
 };

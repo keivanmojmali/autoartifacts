@@ -1,26 +1,26 @@
 export const bulletList = {
   attrs: {
-    className: { default: '' }
+    className: { default: "" },
   },
-  group: 'block',
-  content: 'listItem+', // must contain list items
+  group: "block",
+  content: "listItem+", // must contain list items
   parseDOM: [
     {
-      tag: 'ul',
+      tag: "ul",
       getAttrs: (dom: HTMLElement) => ({
-        className: dom.className || ''
-      })
-    }
+        className: dom.className || "",
+      }),
+    },
   ],
   toDOM(node: any) {
     const { className } = node.attrs;
     return [
-      'ul',
+      "ul",
       {
         class: `bullet-list ${className}`.trim(),
-        'data-node-type': 'bullet-list'
+        "data-node-type": "bullet-list",
       },
-      0
+      0,
     ];
-  }
+  },
 };

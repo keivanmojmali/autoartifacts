@@ -1,38 +1,38 @@
 export const image = {
   attrs: {
-    src: { default: '' },
-    alt: { default: '' },
+    src: { default: "" },
+    alt: { default: "" },
     width: { default: null }, // optional: number (pixels) or string (percentage)
-    display: { default: 'default' }, // 'default' | 'cover' | 'contain' | 'fill'
-    align: { default: 'left' } // 'left' | 'center' | 'right'
+    display: { default: "default" }, // 'default' | 'cover' | 'contain' | 'fill'
+    align: { default: "left" }, // 'left' | 'center' | 'right'
   },
   inline: false, // block-level node
-  group: 'block',
+  group: "block",
   draggable: true,
   parseDOM: [
     {
-      tag: 'img',
+      tag: "img",
       getAttrs: (dom: HTMLElement) => ({
-        src: dom.getAttribute('src') || '',
-        alt: dom.getAttribute('alt') || '',
-        width: dom.getAttribute('width') || null,
-        display: dom.getAttribute('data-display') || 'default',
-        align: dom.getAttribute('data-align') || 'left'
-      })
-    }
+        src: dom.getAttribute("src") || "",
+        alt: dom.getAttribute("alt") || "",
+        width: dom.getAttribute("width") || null,
+        display: dom.getAttribute("data-display") || "default",
+        align: dom.getAttribute("data-align") || "left",
+      }),
+    },
   ],
   toDOM(node: any) {
     const { src, alt, width, display, align } = node.attrs;
     return [
-      'img',
+      "img",
       {
         src,
         alt,
         width: width || undefined,
-        'data-display': display,
-        'data-align': align,
-        'data-node-type': 'image'
-      }
+        "data-display": display,
+        "data-align": align,
+        "data-node-type": "image",
+      },
     ];
-  }
+  },
 };
