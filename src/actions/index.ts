@@ -1,19 +1,26 @@
 /**
  * Actions API for AutoArtifacts
- * 
+ *
  * Provides simple, declarative commands for interacting with the editor.
  * Each action takes an EditorView instance and performs an operation.
- * 
+ *
  * Usage:
  *   import { actions } from 'autoartifacts';
  *   actions.bold(editorView);
  */
 
-import { EditorView } from 'prosemirror-view';
-import { EditorState } from 'prosemirror-state';
-import { undo, redo } from 'prosemirror-history';
-import { toggleMark } from 'prosemirror-commands';
-import { MarkType } from 'prosemirror-model';
+import { EditorView } from "prosemirror-view";
+import { EditorState } from "prosemirror-state";
+import { undo, redo } from "prosemirror-history";
+import { toggleMark } from "prosemirror-commands";
+import { MarkType } from "prosemirror-model";
+import {
+  nextSlide as navNextSlide,
+  prevSlide as navPrevSlide,
+  goToSlide as navGoToSlide,
+  getSlideCount,
+  getCurrentSlideIndex,
+} from "../utils/slideNavigation";
 
 /**
  * Helper function to check if a mark is active in current selection
@@ -32,16 +39,16 @@ function isMarkActive(state: EditorState, markType: MarkType): boolean {
 
 /**
  * Undo the last change
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if undo was successful, false if nothing to undo
- * 
+ *
  * @example
  * actions.undo(editorView);
  */
 export function undoAction(view: EditorView | null): boolean {
   if (!view) {
-    console.warn('[AutoArtifacts] Cannot undo: editor view is null');
+    console.warn("[AutoArtifacts] Cannot undo: editor view is null");
     return false;
   }
 
@@ -50,16 +57,16 @@ export function undoAction(view: EditorView | null): boolean {
 
 /**
  * Redo the last undone change
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if redo was successful, false if nothing to redo
- * 
+ *
  * @example
  * actions.redo(editorView);
  */
 export function redoAction(view: EditorView | null): boolean {
   if (!view) {
-    console.warn('[AutoArtifacts] Cannot redo: editor view is null');
+    console.warn("[AutoArtifacts] Cannot redo: editor view is null");
     return false;
   }
 
@@ -69,22 +76,22 @@ export function redoAction(view: EditorView | null): boolean {
 /**
  * Toggle bold mark on current selection
  * If text is already bold, removes bold. If not bold, makes it bold.
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if action was successful
- * 
+ *
  * @example
  * actions.bold(editorView);
  */
 export function boldAction(view: EditorView | null): boolean {
   if (!view) {
-    console.warn('[AutoArtifacts] Cannot toggle bold: editor view is null');
+    console.warn("[AutoArtifacts] Cannot toggle bold: editor view is null");
     return false;
   }
 
   const markType = view.state.schema.marks.bold;
   if (!markType) {
-    console.warn('[AutoArtifacts] Bold mark type not found in schema');
+    console.warn("[AutoArtifacts] Bold mark type not found in schema");
     return false;
   }
 
@@ -95,22 +102,22 @@ export function boldAction(view: EditorView | null): boolean {
 /**
  * Toggle italic mark on current selection
  * If text is already italic, removes italic. If not italic, makes it italic.
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if action was successful
- * 
+ *
  * @example
  * actions.italic(editorView);
  */
 export function italicAction(view: EditorView | null): boolean {
   if (!view) {
-    console.warn('[AutoArtifacts] Cannot toggle italic: editor view is null');
+    console.warn("[AutoArtifacts] Cannot toggle italic: editor view is null");
     return false;
   }
 
   const markType = view.state.schema.marks.italic;
   if (!markType) {
-    console.warn('[AutoArtifacts] Italic mark type not found in schema');
+    console.warn("[AutoArtifacts] Italic mark type not found in schema");
     return false;
   }
 
@@ -121,16 +128,16 @@ export function italicAction(view: EditorView | null): boolean {
 /**
  * Add or update a link on the current selection
  * If selection already has a link, updates the href. Otherwise, adds new link.
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @param href - The URL for the link
  * @param title - Optional title attribute for the link
  * @returns true if action was successful
- * 
+ *
  * @example
  * // Add link to selected text
  * actions.addLink(editorView, 'https://example.com');
- * 
+ *
  * // Add link with title
  * actions.addLink(editorView, 'https://example.com', 'Example Site');
  */
@@ -140,12 +147,12 @@ export function addLinkAction(
   title?: string
 ): boolean {
   if (!view) {
-    console.warn('[AutoArtifacts] Cannot add link: editor view is null');
+    console.warn("[AutoArtifacts] Cannot add link: editor view is null");
     return false;
   }
 
   if (!href) {
-    console.warn('[AutoArtifacts] Cannot add link: href is required');
+    console.warn("[AutoArtifacts] Cannot add link: href is required");
     return false;
   }
 
@@ -154,13 +161,13 @@ export function addLinkAction(
   const markType = state.schema.marks.link;
 
   if (!markType) {
-    console.warn('[AutoArtifacts] Link mark type not found in schema');
+    console.warn("[AutoArtifacts] Link mark type not found in schema");
     return false;
   }
 
   // If nothing is selected, can't add a link
   if (selection.empty) {
-    console.warn('[AutoArtifacts] Cannot add link: no text selected');
+    console.warn("[AutoArtifacts] Cannot add link: no text selected");
     return false;
   }
 
@@ -168,7 +175,7 @@ export function addLinkAction(
   const attrs = {
     href,
     title: title || null,
-    target: '_blank'
+    target: "_blank",
   };
 
   // Add the link mark to the selection
@@ -184,16 +191,16 @@ export function addLinkAction(
 
 /**
  * Remove link from current selection
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if action was successful
- * 
+ *
  * @example
  * actions.removeLink(editorView);
  */
 export function removeLinkAction(view: EditorView | null): boolean {
   if (!view) {
-    console.warn('[AutoArtifacts] Cannot remove link: editor view is null');
+    console.warn("[AutoArtifacts] Cannot remove link: editor view is null");
     return false;
   }
 
@@ -202,16 +209,12 @@ export function removeLinkAction(view: EditorView | null): boolean {
   const markType = state.schema.marks.link;
 
   if (!markType) {
-    console.warn('[AutoArtifacts] Link mark type not found in schema');
+    console.warn("[AutoArtifacts] Link mark type not found in schema");
     return false;
   }
 
   // Remove the link mark from the selection
-  const tr = state.tr.removeMark(
-    selection.from,
-    selection.to,
-    markType
-  );
+  const tr = state.tr.removeMark(selection.from, selection.to, markType);
 
   dispatch(tr);
   return true;
@@ -219,7 +222,7 @@ export function removeLinkAction(view: EditorView | null): boolean {
 
 /**
  * Check if bold is active in current selection
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if bold is active
  */
@@ -232,7 +235,7 @@ export function isBoldActive(view: EditorView | null): boolean {
 
 /**
  * Check if italic is active in current selection
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if italic is active
  */
@@ -245,7 +248,7 @@ export function isItalicActive(view: EditorView | null): boolean {
 
 /**
  * Check if link is active in current selection
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns true if link is active
  */
@@ -258,7 +261,7 @@ export function isLinkActive(view: EditorView | null): boolean {
 
 /**
  * Get the href of the link at current selection (if any)
- * 
+ *
  * @param view - The ProseMirror EditorView instance
  * @returns href string if link is active, null otherwise
  */
@@ -286,6 +289,83 @@ export function getLinkHref(view: EditorView | null): string | null {
   return href;
 }
 
+/**
+ * Navigate to next slide (presentation mode)
+ *
+ * @param editorElement - The editor DOM element
+ * @param onSlideChange - Optional callback when slide changes
+ */
+export function nextSlideAction(
+  editorElement: HTMLElement | null,
+  onSlideChange?: (index: number) => void
+): void {
+  if (!editorElement) {
+    console.warn("[AutoArtifacts] Cannot navigate: editor element is null");
+    return;
+  }
+  navNextSlide(editorElement, onSlideChange);
+}
+
+/**
+ * Navigate to previous slide (presentation mode)
+ *
+ * @param editorElement - The editor DOM element
+ * @param onSlideChange - Optional callback when slide changes
+ */
+export function prevSlideAction(
+  editorElement: HTMLElement | null,
+  onSlideChange?: (index: number) => void
+): void {
+  if (!editorElement) {
+    console.warn("[AutoArtifacts] Cannot navigate: editor element is null");
+    return;
+  }
+  navPrevSlide(editorElement, onSlideChange);
+}
+
+/**
+ * Go to specific slide (presentation mode)
+ *
+ * @param editorElement - The editor DOM element
+ * @param slideIndex - Zero-based slide index
+ * @param onSlideChange - Optional callback when slide changes
+ */
+export function goToSlideAction(
+  editorElement: HTMLElement | null,
+  slideIndex: number,
+  onSlideChange?: (index: number) => void
+): void {
+  if (!editorElement) {
+    console.warn("[AutoArtifacts] Cannot navigate: editor element is null");
+    return;
+  }
+  navGoToSlide(editorElement, slideIndex, onSlideChange);
+}
+
+/**
+ * Get total number of slides
+ *
+ * @param editorElement - The editor DOM element
+ * @returns Number of slides
+ */
+export function getSlideCountAction(editorElement: HTMLElement | null): number {
+  if (!editorElement) return 0;
+  return getSlideCount(editorElement);
+}
+
+/**
+ * Get current slide index (presentation mode)
+ *
+ * @param editorElement - The editor DOM element
+ * @returns Current slide index (zero-based)
+ */
+export function getCurrentSlideAction(
+  editorElement: HTMLElement | null
+): number {
+  if (!editorElement) return 0;
+  return getCurrentSlideIndex(editorElement);
+}
+
 // Export all actions as a single object for convenience
 export const actions = {
   undo: undoAction,
@@ -297,5 +377,11 @@ export const actions = {
   isBoldActive,
   isItalicActive,
   isLinkActive,
-  getLinkHref
+  getLinkHref,
+  // Navigation actions
+  nextSlide: nextSlideAction,
+  prevSlide: prevSlideAction,
+  goToSlide: goToSlideAction,
+  getSlideCount: getSlideCountAction,
+  getCurrentSlide: getCurrentSlideAction,
 };

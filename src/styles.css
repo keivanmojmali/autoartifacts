@@ -338,3 +338,62 @@ mark {
   // ... etc
 }
 */
+
+/* ==================== EDITOR MODES ==================== */
+
+/* Edit mode (default) - full editing */
+.autoartifacts-editor.mode-edit {
+  cursor: text;
+}
+
+/* Preview mode - read-only, all slides visible */
+.autoartifacts-editor.mode-preview {
+  cursor: default;
+}
+
+.autoartifacts-editor.mode-preview .slide {
+  pointer-events: none;
+}
+
+/* Presentation mode - read-only, one slide at a time */
+.autoartifacts-editor.mode-present {
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px;
+}
+
+.autoartifacts-editor.mode-present .slide {
+  max-width: 1200px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Read-only styling */
+.autoartifacts-editor.read-only {
+  cursor: default;
+}
+
+.autoartifacts-editor.read-only .ProseMirror {
+  cursor: default;
+}
+
+/* Active slide indicator (for presentation mode) */
+.slide[data-active="true"] {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
