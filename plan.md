@@ -1,6 +1,5 @@
 // ============================================
-// IMPLEMENTATION PLAN: SLIDETHEME + LAYOUT SYSTEM
-// ✅ IMPLEMENTATION COMPLETE - See IMPLEMENTATION_SUMMARY.md
+// ACTIONS API IMPLEMENTATION - COMPLETE GUIDE
 // ============================================
 
 /\*
@@ -8,458 +7,504 @@ OVERVIEW:
 
 ---
 
-This implementation adds three key features to make AutoArtifacts easier to use:
+The Actions API allows developers to programmatically interact with the editor
+and build custom toolbars, keyboard shortcuts, and controls.
 
-1. SLIDETHEME PROP - Apply consistent styling to all slides with one prop
+WHY THIS IS CRITICAL:
 
-   - Built-in themes: 'default', 'dark', 'minimal', 'gradient'
-   - Custom themes: pass any string, developer provides CSS
-   - Easy theming without modifying each slide in JSON
+- Makes AutoArtifacts easy to use (BlockNote-style simplicity)
+- Developers can build toolbars without understanding ProseMirror internals
+- Provides standard editor commands (undo, redo, formatting)
+- Enables custom UI implementations
 
-2. LAYOUT SYSTEM - Flexible row layouts with ratio-based columns
+WHAT WE'RE BUILDING:
 
-   - Format: '2-1', '1-1-1', '3-1-2', etc. (any valid ratio)
-   - JavaScript-based parsing and application
-   - Validation with graceful fallback to equal distribution
-   - Supports nested rows
+1. Core actions (undo, redo)
+2. Mark toggling actions (bold, italic, link)
+3. Expose EditorView via ref so actions can be called
+4. Clean, simple API that developers can import and use
 
-3. COLUMN DISPLAY ATTRIBUTES - Already implemented, just needs verification
-   - contentMode, verticalAlign, horizontalAlign, padding
-   - Should already be working from previous implementation
+ARCHITECTURE:
 
-IMPLEMENTATION STEPS:
+- Actions are functions that take an EditorView and perform operations
+- EditorView is exposed via React ref from SlideEditor
+- Developers import actions and call them with the editor instance
+- Each action is self-contained and well-documented
 
-1. Add slideTheme prop to SlideEditor
-2. Add CSS for slide themes
-3. Create layout parser utility
-4. Apply layouts on mount and content changes
-5. Add comprehensive tests
-   \*/
+USAGE EXAMPLE:
+import { SlideEditor, actions } from 'autoartifacts';
 
-// ================== STEP 1: ADD SLIDETHEME PROP ==================
+function MyToolbar() {
+const editorRef = useRef();
+
+return (
+
+<div>
+<button onClick={() => actions.undo(editorRef.current)}>Undo</button>
+<button onClick={() => actions.redo(editorRef.current)}>Redo</button>
+<button onClick={() => actions.bold(editorRef.current)}>Bold</button>
+<SlideEditor ref={editorRef} content={content} />
+</div>
+);
+}
+\*/
+
+// ================== STEP 1: INSTALL REQUIRED DEPENDENCIES ==================
+
+/\*
+We need additional ProseMirror packages for commands and history:
+
+Run these commands in your terminal:
+npm install prosemirror-commands prosemirror-history prosemirror-keymap
+
+These packages provide:
+
+- prosemirror-commands: Basic editing commands
+- prosemirror-history: Undo/redo functionality
+- prosemirror-keymap: Keyboard shortcut handling (needed for history)
+  \*/
+
+// ================== STEP 2: CREATE ACTIONS UTILITY ==================
+
+// File: src/actions/index.ts (CREATE THIS NEW FILE)
+
+/\*\*
+
+- Actions API for AutoArtifacts
+-
+- Provides simple, declarative commands for interacting with the editor.
+- Each action takes an EditorView instance and performs an operation.
+-
+- Usage:
+- import { actions } from 'autoartifacts';
+- actions.bold(editorView);
+  \*/
+
+import { EditorView } from 'prosemirror-view';
+import { EditorState, Transaction } from 'prosemirror-state';
+import { undo, redo } from 'prosemirror-history';
+import { toggleMark } from 'prosemirror-commands';
+import { MarkType } from 'prosemirror-model';
+
+/\*\*
+
+- Helper function to check if a mark is active in current selection
+  \*/
+  function isMarkActive(state: EditorState, markType: MarkType): boolean {
+  const { from, $from, to, empty } = state.selection;
+
+if (empty) {
+// If selection is empty, check stored marks or marks at cursor position
+return !!markType.isInSet(state.storedMarks || $from.marks());
+}
+
+// If selection has content, check if mark exists anywhere in selection
+return state.doc.rangeHasMark(from, to, markType);
+}
+
+/\*\*
+
+- Undo the last change
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if undo was successful, false if nothing to undo
+-
+- @example
+- actions.undo(editorView);
+  \*/
+  export function undoAction(view: EditorView | null): boolean {
+  if (!view) {
+  console.warn('[AutoArtifacts] Cannot undo: editor view is null');
+  return false;
+  }
+
+return undo(view.state, view.dispatch);
+}
+
+/\*\*
+
+- Redo the last undone change
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if redo was successful, false if nothing to redo
+-
+- @example
+- actions.redo(editorView);
+  \*/
+  export function redoAction(view: EditorView | null): boolean {
+  if (!view) {
+  console.warn('[AutoArtifacts] Cannot redo: editor view is null');
+  return false;
+  }
+
+return redo(view.state, view.dispatch);
+}
+
+/\*\*
+
+- Toggle bold mark on current selection
+- If text is already bold, removes bold. If not bold, makes it bold.
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if action was successful
+-
+- @example
+- actions.bold(editorView);
+  \*/
+  export function boldAction(view: EditorView | null): boolean {
+  if (!view) {
+  console.warn('[AutoArtifacts] Cannot toggle bold: editor view is null');
+  return false;
+  }
+
+const markType = view.state.schema.marks.bold;
+if (!markType) {
+console.warn('[AutoArtifacts] Bold mark type not found in schema');
+return false;
+}
+
+const command = toggleMark(markType);
+return command(view.state, view.dispatch);
+}
+
+/\*\*
+
+- Toggle italic mark on current selection
+- If text is already italic, removes italic. If not italic, makes it italic.
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if action was successful
+-
+- @example
+- actions.italic(editorView);
+  \*/
+  export function italicAction(view: EditorView | null): boolean {
+  if (!view) {
+  console.warn('[AutoArtifacts] Cannot toggle italic: editor view is null');
+  return false;
+  }
+
+const markType = view.state.schema.marks.italic;
+if (!markType) {
+console.warn('[AutoArtifacts] Italic mark type not found in schema');
+return false;
+}
+
+const command = toggleMark(markType);
+return command(view.state, view.dispatch);
+}
+
+/\*\*
+
+- Add or update a link on the current selection
+- If selection already has a link, updates the href. Otherwise, adds new link.
+-
+- @param view - The ProseMirror EditorView instance
+- @param href - The URL for the link
+- @param title - Optional title attribute for the link
+- @returns true if action was successful
+-
+- @example
+- // Add link to selected text
+- actions.addLink(editorView, 'https://example.com');
+-
+- // Add link with title
+- actions.addLink(editorView, 'https://example.com', 'Example Site');
+  \*/
+  export function addLinkAction(
+  view: EditorView | null,
+  href: string,
+  title?: string
+  ): boolean {
+  if (!view) {
+  console.warn('[AutoArtifacts] Cannot add link: editor view is null');
+  return false;
+  }
+
+if (!href) {
+console.warn('[AutoArtifacts] Cannot add link: href is required');
+return false;
+}
+
+const { state, dispatch } = view;
+const { selection } = state;
+const markType = state.schema.marks.link;
+
+if (!markType) {
+console.warn('[AutoArtifacts] Link mark type not found in schema');
+return false;
+}
+
+// If nothing is selected, can't add a link
+if (selection.empty) {
+console.warn('[AutoArtifacts] Cannot add link: no text selected');
+return false;
+}
+
+// Create the link mark with attributes
+const attrs = {
+href,
+title: title || null,
+target: '\_blank'
+};
+
+// Add the link mark to the selection
+const tr = state.tr.addMark(
+selection.from,
+selection.to,
+markType.create(attrs)
+);
+
+dispatch(tr);
+return true;
+}
+
+/\*\*
+
+- Remove link from current selection
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if action was successful
+-
+- @example
+- actions.removeLink(editorView);
+  \*/
+  export function removeLinkAction(view: EditorView | null): boolean {
+  if (!view) {
+  console.warn('[AutoArtifacts] Cannot remove link: editor view is null');
+  return false;
+  }
+
+const { state, dispatch } = view;
+const { selection } = state;
+const markType = state.schema.marks.link;
+
+if (!markType) {
+console.warn('[AutoArtifacts] Link mark type not found in schema');
+return false;
+}
+
+// Remove the link mark from the selection
+const tr = state.tr.removeMark(
+selection.from,
+selection.to,
+markType
+);
+
+dispatch(tr);
+return true;
+}
+
+/\*\*
+
+- Check if bold is active in current selection
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if bold is active
+  \*/
+  export function isBoldActive(view: EditorView | null): boolean {
+  if (!view) return false;
+  const markType = view.state.schema.marks.bold;
+  if (!markType) return false;
+  return isMarkActive(view.state, markType);
+  }
+
+/\*\*
+
+- Check if italic is active in current selection
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if italic is active
+  \*/
+  export function isItalicActive(view: EditorView | null): boolean {
+  if (!view) return false;
+  const markType = view.state.schema.marks.italic;
+  if (!markType) return false;
+  return isMarkActive(view.state, markType);
+  }
+
+/\*\*
+
+- Check if link is active in current selection
+-
+- @param view - The ProseMirror EditorView instance
+- @returns true if link is active
+  \*/
+  export function isLinkActive(view: EditorView | null): boolean {
+  if (!view) return false;
+  const markType = view.state.schema.marks.link;
+  if (!markType) return false;
+  return isMarkActive(view.state, markType);
+  }
+
+/\*\*
+
+- Get the href of the link at current selection (if any)
+-
+- @param view - The ProseMirror EditorView instance
+- @returns href string if link is active, null otherwise
+  \*/
+  export function getLinkHref(view: EditorView | null): string | null {
+  if (!view) return null;
+
+const { state } = view;
+const { from, to } = state.selection;
+const markType = state.schema.marks.link;
+
+if (!markType) return null;
+
+let href: string | null = null;
+
+state.doc.nodesBetween(from, to, (node) => {
+if (href) return false; // Already found, stop searching
+
+    const linkMark = markType.isInSet(node.marks);
+    if (linkMark) {
+      href = linkMark.attrs.href;
+      return false;
+    }
+
+});
+
+return href;
+}
+
+// Export all actions as a single object for convenience
+export const actions = {
+undo: undoAction,
+redo: redoAction,
+bold: boldAction,
+italic: italicAction,
+addLink: addLinkAction,
+removeLink: removeLinkAction,
+isBoldActive,
+isItalicActive,
+isLinkActive,
+getLinkHref
+};
+
+// ================== STEP 3: ADD HISTORY PLUGIN TO EDITOR ==================
 
 // File: src/components/SlideEditor.tsx
 
-// UPDATE THE INTERFACE (add slideTheme prop):
+// ADD THESE IMPORTS at the top:
+import { history } from 'prosemirror-history';
+import { keymap } from 'prosemirror-keymap';
+import { baseKeymap } from 'prosemirror-commands';
+import { undo, redo } from 'prosemirror-history';
+import { forwardRef, useImperativeHandle } from 'react';
+
+// UPDATE THE INTERFACE to support ref:
 interface SlideEditorProps {
 content: any;
 onChange?: (json: any) => void;
 editorTheme?: 'light' | 'dark' | 'presentation' | string;
 editorStyles?: string;
-slideTheme?: string; // ADD THIS LINE - accepts any string for theme name
+slideTheme?: string;
 }
 
-// UPDATE THE COMPONENT (add slideTheme parameter and apply to className):
-export const SlideEditor: React.FC<SlideEditorProps> = ({
-content,
-onChange,
-editorTheme = 'light',
-editorStyles = '',
-slideTheme = 'default' // ADD THIS LINE - default theme is 'default'
-}) => {
-const editorRef = useRef<HTMLDivElement>(null);
-const viewRef = useRef<EditorView | null>(null);
-
-useEffect(() => {
-if (!editorRef.current) return;
-
-    // Create initial state from JSON
-    const state = EditorState.create({
-      doc: schema.nodeFromJSON(content),
-      schema
-    });
-
-    // Create the editor view
-    const view = new EditorView(editorRef.current, {
-      state,
-      dispatchTransaction(transaction) {
-        const newState = view.state.apply(transaction);
-        view.updateState(newState);
-
-        // Call onChange with updated JSON
-        if (onChange && transaction.docChanged) {
-          onChange(newState.doc.toJSON());
-        }
-      }
-    });
-
-    viewRef.current = view;
-
-    // Cleanup
-    return () => {
-      view.destroy();
-    };
-
-}, []);
-
-// UPDATE THIS LINE - add slide-theme-{slideTheme} class:
-const editorClassName = `autoartifacts-editor theme-${editorTheme} slide-theme-${slideTheme} ${editorStyles}`.trim();
-
-return (
-<div 
-      ref={editorRef} 
-      className={editorClassName}
-    />
-);
-};
-
-// ================== STEP 2: ADD SLIDE THEME CSS ==================
-
-// File: src/styles.css
-// ADD these styles at the end of the file
-
-/_ ==================== SLIDE THEMES ==================== _/
-/_ These apply to ALL slides when slideTheme prop is set _/
-
-/_ Default Theme - Clean white with subtle border _/
-.autoartifacts-editor.slide-theme-default .slide {
-background: #ffffff;
-border: 1px solid #e5e7eb;
-border-radius: 8px;
-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+// ADD THIS TYPE for the ref:
+export interface SlideEditorRef {
+view: EditorView | null;
 }
 
-/_ Dark Theme - Dark background with light text _/
-.autoartifacts-editor.slide-theme-dark .slide {
-background: #1e293b;
-border: 1px solid #334155;
-border-radius: 8px;
-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-color: #f1f5f9;
-}
-
-.autoartifacts-editor.slide-theme-dark .slide h1,
-.autoartifacts-editor.slide-theme-dark .slide h2,
-.autoartifacts-editor.slide-theme-dark .slide h3,
-.autoartifacts-editor.slide-theme-dark .slide h4,
-.autoartifacts-editor.slide-theme-dark .slide h5,
-.autoartifacts-editor.slide-theme-dark .slide h6 {
-color: #f1f5f9;
-}
-
-.autoartifacts-editor.slide-theme-dark .slide p {
-color: #e2e8f0;
-}
-
-/_ Minimal Theme - No borders or shadows, just content _/
-.autoartifacts-editor.slide-theme-minimal .slide {
-background: #ffffff;
-border: none;
-border-radius: 0;
-box-shadow: none;
-}
-
-/_ Gradient Theme - Purple gradient background _/
-.autoartifacts-editor.slide-theme-gradient .slide {
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-border: none;
-border-radius: 12px;
-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-color: #ffffff;
-}
-
-.autoartifacts-editor.slide-theme-gradient .slide h1,
-.autoartifacts-editor.slide-theme-gradient .slide h2,
-.autoartifacts-editor.slide-theme-gradient .slide h3,
-.autoartifacts-editor.slide-theme-gradient .slide h4,
-.autoartifacts-editor.slide-theme-gradient .slide h5,
-.autoartifacts-editor.slide-theme-gradient .slide h6 {
-color: #ffffff;
-}
-
-.autoartifacts-editor.slide-theme-gradient .slide p {
-color: #f3f4f6;
-}
-
-/_ Custom themes: Developers can add their own like this:
-.autoartifacts-editor.slide-theme-my-brand .slide {
-background: your-color;
-border: your-border;
-// ... etc
-}
-_/
-
-// ================== STEP 3: CREATE LAYOUT PARSER UTILITY ==================
-
-// File: src/utils/layoutParser.ts (CREATE THIS NEW FILE)
-
-/\*\*
-
-- Layout Parser Utility
--
-- Parses layout strings like '2-1' or '1-1-1' and applies flex ratios to columns.
-- Handles validation and provides graceful fallback to equal distribution.
--
-- Examples:
-- - '1' → single column at 100%
-- - '1-1' → two equal columns (50/50)
-- - '2-1' → two columns (66.66% / 33.33%)
-- - '1-2-1' → three columns (25% / 50% / 25%)
-- - '5-3-2' → three columns (50% / 30% / 20%)
-    \*/
-
-/\*\*
-
-- Parses a layout string and returns flex ratios for each column
--
-- @param layout - Layout string (e.g., '2-1', '1-1-1')
-- @param columnCount - Number of columns in the row
-- @returns Array of flex ratio numbers
--
-- @example
-- parseLayout('2-1', 2) // Returns [2, 1]
-- parseLayout('1-1-1', 3) // Returns [1, 1, 1]
-- parseLayout('invalid', 2) // Returns [1, 1] with console warning
-  \*/
-  export function parseLayout(layout: string, columnCount: number): number[] {
-  // Empty or 'auto' layout = equal distribution
-  if (!layout || layout === 'auto') {
-  return new Array(columnCount).fill(1);
-  }
-
-// Validate format: must be numbers separated by dashes
-// Valid: '1-2', '1-1-1', '5-3-2'
-// Invalid: 'abc', '1--2', '1-2-', '-1-2'
-const layoutRegex = /^\d+(-\d+)\*$/;
-  if (!layoutRegex.test(layout)) {
-    console.warn(
-      `[AutoArtifacts] Invalid layout format '${layout}'. `+
-     `Expected format: numbers separated by dashes (e.g., '2-1', '1-1-1'). `+
-     `Using equal distribution.`
-);
-return new Array(columnCount).fill(1);
-}
-
-// Parse the layout string into numbers
-const ratios = layout.split('-').map(Number);
-
-// Validate column count matches
-if (ratios.length !== columnCount) {
-console.warn(
-`[AutoArtifacts] Layout '${layout}' expects ${ratios.length} column(s) ` +
-`but found ${columnCount} column(s) in the row. ` +
-`Using equal distribution.`
-);
-return new Array(columnCount).fill(1);
-}
-
-return ratios;
-}
-
-/\*\*
-
-- Applies layout ratios to a row's columns by setting flex values
--
-- @param rowElement - The DOM element for the row
-- @param layout - Layout string (e.g., '2-1')
--
-- @example
-- const row = document.querySelector('[data-node-type="row"]');
-- applyLayoutToRow(row, '2-1');
-- // First column will have flex: 2 1 0%
-- // Second column will have flex: 1 1 0%
-  \*/
-  export function applyLayoutToRow(rowElement: HTMLElement, layout: string): void {
-  // Get all column children
-  const columns = Array.from(rowElement.children) as HTMLElement[];
-
-if (columns.length === 0) {
-return; // No columns to apply layout to
-}
-
-// Parse the layout
-const ratios = parseLayout(layout, columns.length);
-
-// Apply flex values to each column
-columns.forEach((column, index) => {
-// Set flex: <grow> <shrink> <basis>
-// grow: ratio value (how much space this column takes)
-// shrink: 1 (can shrink if needed)
-// basis: 0% (start from zero and grow based on flex-grow)
-column.style.flex = `${ratios[index]} 1 0%`;
-});
-}
-
-/\*\*
-
-- Applies layouts to all rows in the editor
-- Should be called after editor mount and after content updates
--
-- @param editorElement - The root editor DOM element
-  \*/
-  export function applyAllLayouts(editorElement: HTMLElement): void {
-  // Find all row elements
-  const rows = editorElement.querySelectorAll('[data-node-type="row"]') as NodeListOf<HTMLElement>;
-
-rows.forEach((row) => {
-const layout = row.getAttribute('data-layout');
-
-    // Only apply if layout is specified and not 'auto'
-    if (layout && layout !== 'auto') {
-      applyLayoutToRow(row, layout);
-    }
-    // If no layout or 'auto', columns will use default flex: 1 from CSS
-
-});
-}
-
-// ================== STEP 4: UPDATE SLIDEEDITOR TO APPLY LAYOUTS ==================
-
-// File: src/components/SlideEditor.tsx
-
-// ADD IMPORT at the top:
-import { applyAllLayouts } from '../utils/layoutParser';
-
-// UPDATE THE COMPONENT to apply layouts after mounting and content changes:
-
-export const SlideEditor: React.FC<SlideEditorProps> = ({
+// UPDATE THE COMPONENT to use forwardRef and expose EditorView:
+export const SlideEditor = forwardRef<SlideEditorRef, SlideEditorProps>(
+({
 content,
 onChange,
 editorTheme = 'light',
 editorStyles = '',
 slideTheme = 'default'
-}) => {
+}, ref) => {
 const editorRef = useRef<HTMLDivElement>(null);
 const viewRef = useRef<EditorView | null>(null);
 
-// Existing useEffect for editor creation
-useEffect(() => {
-if (!editorRef.current) return;
+    // Expose the EditorView via ref
+    useImperativeHandle(ref, () => ({
+      view: viewRef.current
+    }));
 
-    const state = EditorState.create({
-      doc: schema.nodeFromJSON(content),
-      schema
-    });
+    useEffect(() => {
+      if (!editorRef.current) return;
 
-    const view = new EditorView(editorRef.current, {
-      state,
-      dispatchTransaction(transaction) {
-        const newState = view.state.apply(transaction);
-        view.updateState(newState);
+      // ADD PLUGINS including history
+      const plugins = [
+        history(), // Enables undo/redo
+        keymap({
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo
+        }),
+        keymap(baseKeymap)
+      ];
 
-        if (onChange && transaction.docChanged) {
-          onChange(newState.doc.toJSON());
+      const state = EditorState.create({
+        doc: schema.nodeFromJSON(content),
+        schema,
+        plugins // ADD THIS LINE
+      });
+
+      const view = new EditorView(editorRef.current, {
+        state,
+        dispatchTransaction(transaction) {
+          const newState = view.state.apply(transaction);
+          view.updateState(newState);
+
+          if (onChange && transaction.docChanged) {
+            onChange(newState.doc.toJSON());
+          }
         }
-      }
-    });
+      });
 
-    viewRef.current = view;
+      viewRef.current = view;
 
-    // Apply layouts after initial render
-    // Use setTimeout to ensure DOM is fully rendered
-    setTimeout(() => {
-      if (editorRef.current) {
-        applyAllLayouts(editorRef.current);
-      }
-    }, 0);
+      // Apply layouts after initial render
+      setTimeout(() => {
+        if (editorRef.current) {
+          applyAllLayouts(editorRef.current);
+        }
+      }, 0);
 
-    return () => {
-      view.destroy();
-    };
+      return () => {
+        view.destroy();
+      };
+    }, []);
 
-}, []);
+    // Re-apply layouts when content changes
+    useEffect(() => {
+      if (!editorRef.current || !viewRef.current) return;
 
-// ADD NEW useEffect: Re-apply layouts when content changes
-useEffect(() => {
-if (!editorRef.current || !viewRef.current) return;
+      setTimeout(() => {
+        if (editorRef.current) {
+          applyAllLayouts(editorRef.current);
+        }
+      }, 0);
+    }, [content]);
 
-    // Apply layouts after content updates
-    // Use setTimeout to ensure DOM has updated
-    setTimeout(() => {
-      if (editorRef.current) {
-        applyAllLayouts(editorRef.current);
-      }
-    }, 0);
+    const editorClassName = `autoartifacts-editor theme-${editorTheme} slide-theme-${slideTheme} ${editorStyles}`.trim();
 
-}, [content]); // Run when content prop changes
+    return (
+      <div
+        ref={editorRef}
+        className={editorClassName}
+      />
+    );
 
-const editorClassName = `autoartifacts-editor theme-${editorTheme} slide-theme-${slideTheme} ${editorStyles}`.trim();
-
-return (
-<div 
-      ref={editorRef} 
-      className={editorClassName}
-    />
+}
 );
-};
 
-// ================== STEP 5: VERIFY COLUMN DISPLAY ATTRIBUTES ==================
+SlideEditor.displayName = 'SlideEditor';
 
-/_
-Column display attributes should already be working from previous implementation.
-Verify that these styles exist in src/styles.css:
-_/
+// ================== STEP 4: UPDATE MAIN EXPORTS ==================
 
-// File: src/styles.css
-// VERIFY these styles exist (they should already be there from previous implementation):
+// File: src/index.ts
 
-/_ Column content modes - how images/content fill the column _/
-.column.content-default {
-/_ Default behavior - content flows naturally _/
-}
-
-.column.content-cover img,
-.column.content-cover video {
-object-fit: cover;
-width: 100%;
-height: 100%;
-}
-
-.column.content-contain img,
-.column.content-contain video {
-object-fit: contain;
-max-width: 100%;
-height: auto;
-}
-
-/_ Column vertical alignment _/
-.column.v-align-top {
-display: flex;
-flex-direction: column;
-justify-content: flex-start;
-}
-
-.column.v-align-center {
-display: flex;
-flex-direction: column;
-justify-content: center;
-}
-
-.column.v-align-bottom {
-display: flex;
-flex-direction: column;
-justify-content: flex-end;
-}
-
-/_ Column horizontal alignment _/
-.column.h-align-left {
-text-align: left;
-}
-
-.column.h-align-center {
-text-align: center;
-}
-
-.column.h-align-right {
-text-align: right;
-}
-
-/_ Column padding _/
-.column.padding-none {
-padding: 0;
-}
-
-.column.padding-small {
-padding: 12px;
-}
-
-.column.padding-medium {
-padding: 20px;
-}
-
-.column.padding-large {
-padding: 32px;
-}
+// UPDATE to export actions:
+export { SlideEditor } from './components/SlideEditor';
+export type { SlideEditorRef } from './components/SlideEditor';
+export { schema } from './schema';
+export { actions } from './actions'; // ADD THIS LINE
 
 // ================== COMPREHENSIVE TESTS ==================
 
@@ -467,10 +512,13 @@ padding: 32px;
 After implementation, test with these examples in your demo app
 _/
 
-// TEST 1: SlideTheme Prop - Default Theme
-// File: demo/src/App.tsx or demo/src/SlideDemo.tsx
+// TEST 1: Basic Toolbar with Undo/Redo
+// File: demo/src/ToolbarDemo.tsx (CREATE THIS FILE)
 
-const test1Content = {
+import React, { useRef, useState } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+const sampleContent = {
 type: 'doc',
 content: [
 {
@@ -483,13 +531,10 @@ content: [
 type: 'column',
 content: [
 {
-type: 'heading',
-attrs: { level: 1 },
-content: [{ type: 'text', text: 'Default Theme Test' }]
-},
-{
 type: 'paragraph',
-content: [{ type: 'text', text: 'This slide should have a clean white background with subtle border and shadow.' }]
+content: [
+{ type: 'text', text: 'Select this text and try the toolbar buttons above!' }
+]
 }
 ]
 }
@@ -500,323 +545,94 @@ content: [{ type: 'text', text: 'This slide should have a clean white background
 ]
 };
 
-// Usage:
-<SlideEditor content={test1Content} slideTheme="default" />
+function ToolbarDemo() {
+const editorRef = useRef<SlideEditorRef>(null);
+const [content, setContent] = useState(sampleContent);
 
-// EXPECTED RESULT: White slide with light border and subtle shadow
-
-// ---
-
-// TEST 2: SlideTheme Prop - Dark Theme
-
-const test2Content = {
-type: 'doc',
-content: [
-{
-type: 'slide',
-content: [
-{
-type: 'row',
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 1 },
-content: [{ type: 'text', text: 'Dark Theme Test' }]
-},
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'This slide should have a dark background with light text.' }]
+const handleUndo = () => {
+if (editorRef.current?.view) {
+actions.undo(editorRef.current.view);
 }
-]
-}
-]
-}
-]
-}
-]
 };
 
-// Usage:
-<SlideEditor content={test2Content} slideTheme="dark" />
-
-// EXPECTED RESULT: Dark blue-gray slide with white text
-
-// ---
-
-// TEST 3: SlideTheme Prop - Gradient Theme
-
-const test3Content = {
-type: 'doc',
-content: [
-{
-type: 'slide',
-content: [
-{
-type: 'row',
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 1 },
-content: [{ type: 'text', text: 'Gradient Theme Test' }]
-},
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'This slide should have a purple gradient background.' }]
+const handleRedo = () => {
+if (editorRef.current?.view) {
+actions.redo(editorRef.current.view);
 }
-]
-}
-]
-}
-]
-}
-]
 };
 
-// Usage:
-<SlideEditor content={test3Content} slideTheme="gradient" />
-
-// EXPECTED RESULT: Purple gradient background with white text
-
-// ---
-
-// TEST 4: Layout System - Two Columns (2:1 ratio)
-
-const test4Content = {
-type: 'doc',
-content: [
-{
-type: 'slide',
-content: [
-{
-type: 'row',
-attrs: {
-layout: '2-1' // First column twice as wide
-},
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 2 },
-content: [{ type: 'text', text: 'Main Content (2/3 width)' }]
-},
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'This column should take up 2/3 of the row width.' }]
+const handleBold = () => {
+if (editorRef.current?.view) {
+actions.bold(editorRef.current.view);
 }
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 2 },
-content: [{ type: 'text', text: 'Sidebar (1/3 width)' }]
-},
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'This column should take up 1/3 of the row width.' }]
-}
-]
-}
-]
-}
-]
-}
-]
 };
 
-// Usage:
-<SlideEditor content={test4Content} slideTheme="default" />
-
-// EXPECTED RESULT: First column is twice as wide as second column (66.66% vs 33.33%)
-
-// ---
-
-// TEST 5: Layout System - Three Equal Columns
-
-const test5Content = {
-type: 'doc',
-content: [
-{
-type: 'slide',
-content: [
-{
-type: 'row',
-attrs: {
-layout: '1-1-1'
-},
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 3 },
-content: [{ type: 'text', text: 'Column 1' }]
+const handleItalic = () => {
+if (editorRef.current?.view) {
+actions.italic(editorRef.current.view);
 }
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 3 },
-content: [{ type: 'text', text: 'Column 2' }]
-}
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 3 },
-content: [{ type: 'text', text: 'Column 3' }]
-}
-]
-}
-]
-}
-]
-}
-]
 };
 
-// Usage:
-<SlideEditor content={test5Content} slideTheme="default" />
-
-// EXPECTED RESULT: Three equal-width columns (33.33% each)
-
-// ---
-
-// TEST 6: Layout System - Complex Ratio (5:3:2)
-
-const test6Content = {
-type: 'doc',
-content: [
-{
-type: 'slide',
-content: [
-{
-type: 'row',
-attrs: {
-layout: '5-3-2' // 50%, 30%, 20%
-},
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 3 },
-content: [{ type: 'text', text: 'Large (50%)' }]
+const handleAddLink = () => {
+const url = prompt('Enter URL:');
+if (url && editorRef.current?.view) {
+actions.addLink(editorRef.current.view, url);
 }
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 3 },
-content: [{ type: 'text', text: 'Medium (30%)' }]
-}
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 3 },
-content: [{ type: 'text', text: 'Small (20%)' }]
-}
-]
-}
-]
-}
-]
-}
-]
 };
 
-// Usage:
-<SlideEditor content={test6Content} slideTheme="default" />
+return (
 
-// EXPECTED RESULT: Three columns with widths 50%, 30%, 20%
+<div style={{ padding: '20px' }}>
+<div style={{
+        marginBottom: '10px',
+        padding: '10px',
+        background: '#f5f5f5',
+        borderRadius: '4px',
+        display: 'flex',
+        gap: '8px'
+      }}>
+<button onClick={handleUndo}>↶ Undo</button>
+<button onClick={handleRedo}>↷ Redo</button>
+<span style={{ margin: '0 8px' }}>|</span>
+<button onClick={handleBold}>
+<strong>B</strong>
+</button>
+<button onClick={handleItalic}>
+<em>I</em>
+</button>
+<button onClick={handleAddLink}>🔗 Link</button>
+</div>
 
-// ---
+      <SlideEditor
+        ref={editorRef}
+        content={content}
+        onChange={setContent}
+        slideTheme="default"
+      />
+    </div>
 
-// TEST 7: Layout System - Invalid Layout (Fallback)
+);
+}
 
-const test7Content = {
-type: 'doc',
-content: [
-{
-type: 'slide',
-content: [
-{
-type: 'row',
-attrs: {
-layout: '2-1' // Expects 2 columns but we have 3
-},
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'Column 1' }]
-}
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'Column 2' }]
-}
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'Column 3' }]
-}
-]
-}
-]
-}
-]
-}
-]
-};
-
-// Usage:
-<SlideEditor content={test7Content} slideTheme="default" />
+export default ToolbarDemo;
 
 // EXPECTED RESULT:
-// - Console warning: "Layout '2-1' expects 2 column(s) but found 3 column(s)"
-// - Columns fall back to equal width (33.33% each)
+// - Clicking Undo/Redo buttons works
+// - Cmd/Ctrl+Z for undo works
+// - Cmd/Ctrl+Y or Cmd/Ctrl+Shift+Z for redo works
+// - Bold button toggles bold on selected text
+// - Italic button toggles italic on selected text
+// - Link button prompts for URL and adds link to selected text
 
 // ---
 
-// TEST 8: Column Display Attributes - Image Cover
+// TEST 2: Advanced Toolbar with Active State
+// File: demo/src/AdvancedToolbar.tsx (CREATE THIS FILE)
 
-const test8Content = {
+import React, { useRef, useState, useEffect } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+const sampleContent = {
 type: 'doc',
 content: [
 {
@@ -824,42 +640,38 @@ type: 'slide',
 content: [
 {
 type: 'row',
-attrs: {
-layout: '1-1'
-},
 content: [
 {
 type: 'column',
-attrs: {
-contentMode: 'cover',
-padding: 'none'
-},
-content: [
-{
-type: 'image',
-attrs: {
-src: 'https://picsum.photos/800/600',
-alt: 'Cover image'
-}
-}
-]
-},
-{
-type: 'column',
-attrs: {
-verticalAlign: 'center',
-horizontalAlign: 'center',
-padding: 'large'
-},
 content: [
 {
 type: 'heading',
-attrs: { level: 2 },
-content: [{ type: 'text', text: 'Centered Text' }]
+attrs: { level: 1 },
+content: [{ type: 'text', text: 'Advanced Toolbar Demo' }]
 },
 {
 type: 'paragraph',
-content: [{ type: 'text', text: 'This text should be centered both vertically and horizontally.' }]
+content: [
+{ type: 'text', text: 'Try selecting text and watch the toolbar buttons highlight! ' },
+{
+type: 'text',
+text: 'This text is bold',
+marks: [{ type: 'bold' }]
+},
+{ type: 'text', text: ' and ' },
+{
+type: 'text',
+text: 'this is italic',
+marks: [{ type: 'italic' }]
+},
+{ type: 'text', text: ' and ' },
+{
+type: 'text',
+text: 'this is a link',
+marks: [{ type: 'link', attrs: { href: 'https://example.com' } }]
+},
+{ type: 'text', text: '.' }
+]
 }
 ]
 }
@@ -870,18 +682,160 @@ content: [{ type: 'text', text: 'This text should be centered both vertically an
 ]
 };
 
-// Usage:
-<SlideEditor content={test8Content} slideTheme="default" />
+function AdvancedToolbar() {
+const editorRef = useRef<SlideEditorRef>(null);
+const [content, setContent] = useState(sampleContent);
+const [isBold, setIsBold] = useState(false);
+const [isItalic, setIsItalic] = useState(false);
+const [isLink, setIsLink] = useState(false);
+const [linkHref, setLinkHref] = useState<string | null>(null);
+
+// Update toolbar state based on selection
+const updateToolbarState = () => {
+if (editorRef.current?.view) {
+setIsBold(actions.isBoldActive(editorRef.current.view));
+setIsItalic(actions.isItalicActive(editorRef.current.view));
+setIsLink(actions.isLinkActive(editorRef.current.view));
+setLinkHref(actions.getLinkHref(editorRef.current.view));
+}
+};
+
+// Update toolbar state when editor changes
+useEffect(() => {
+const interval = setInterval(updateToolbarState, 100);
+return () => clearInterval(interval);
+}, []);
+
+const handleBold = () => {
+if (editorRef.current?.view) {
+actions.bold(editorRef.current.view);
+updateToolbarState();
+}
+};
+
+const handleItalic = () => {
+if (editorRef.current?.view) {
+actions.italic(editorRef.current.view);
+updateToolbarState();
+}
+};
+
+const handleLink = () => {
+if (!editorRef.current?.view) return;
+
+    if (isLink) {
+      // Remove link
+      actions.removeLink(editorRef.current.view);
+    } else {
+      // Add link
+      const url = prompt('Enter URL:', 'https://');
+      if (url) {
+        actions.addLink(editorRef.current.view, url);
+      }
+    }
+    updateToolbarState();
+
+};
+
+const buttonStyle = (active: boolean) => ({
+padding: '8px 12px',
+background: active ? '#007bff' : '#f8f9fa',
+color: active ? 'white' : 'black',
+border: '1px solid #dee2e6',
+borderRadius: '4px',
+cursor: 'pointer',
+fontWeight: active ? 'bold' : 'normal'
+});
+
+return (
+
+<div style={{ padding: '20px' }}>
+<div style={{
+        marginBottom: '10px',
+        padding: '10px',
+        background: '#f5f5f5',
+        borderRadius: '4px',
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center'
+      }}>
+<button
+onClick={() => editorRef.current?.view && actions.undo(editorRef.current.view)}
+style={buttonStyle(false)} >
+↶ Undo
+</button>
+<button
+onClick={() => editorRef.current?.view && actions.redo(editorRef.current.view)}
+style={buttonStyle(false)} >
+↷ Redo
+</button>
+
+        <span style={{ margin: '0 8px', color: '#ccc' }}>|</span>
+
+        <button onClick={handleBold} style={buttonStyle(isBold)}>
+          <strong>B</strong>
+        </button>
+        <button onClick={handleItalic} style={buttonStyle(isItalic)}>
+          <em>I</em>
+        </button>
+        <button onClick={handleLink} style={buttonStyle(isLink)}>
+          🔗 {isLink ? 'Unlink' : 'Link'}
+        </button>
+
+        {isLink && linkHref && (
+          <span style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
+            ({linkHref})
+          </span>
+        )}
+      </div>
+
+      <SlideEditor
+        ref={editorRef}
+        content={content}
+        onChange={setContent}
+        slideTheme="default"
+      />
+    </div>
+
+);
+}
+
+export default AdvancedToolbar;
 
 // EXPECTED RESULT:
-// - Left column: Image covers entire column with no padding
-// - Right column: Text centered vertically and horizontally with large padding
+// - Bold button highlights when cursor is in bold text
+// - Italic button highlights when cursor is in italic text
+// - Link button highlights when cursor is in a link
+// - Link href shows in toolbar when link is active
+// - All formatting works correctly
 
 // ---
 
-// TEST 9: Nested Rows
+// TEST 3: Keyboard Shortcuts
+// This test doesn't need new code, just verify keyboard shortcuts work
 
-const test9Content = {
+// EXPECTED BEHAVIOR:
+// - Cmd/Ctrl+Z undoes last change
+// - Cmd/Ctrl+Y or Cmd/Ctrl+Shift+Z redoes last undone change
+// - Changes are tracked in history
+// - Undo/redo works across multiple changes
+
+// TO TEST:
+// 1. Type some text
+// 2. Press Cmd/Ctrl+Z - text should disappear
+// 3. Press Cmd/Ctrl+Y - text should reappear
+// 4. Make multiple edits
+// 5. Press Cmd/Ctrl+Z multiple times - should undo each edit in reverse order
+
+// ---
+
+// TEST 4: Actions with No Selection
+// File: demo/src/NoSelectionTest.tsx
+
+import React, { useRef } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+const emptyContent = {
 type: 'doc',
 content: [
 {
@@ -889,52 +843,13 @@ type: 'slide',
 content: [
 {
 type: 'row',
-attrs: {
-layout: '2-1'
-},
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 2 },
-content: [{ type: 'text', text: 'Main Column' }]
-},
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'This is the main content area.' }]
-}
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'row', // NESTED ROW
-attrs: {
-layout: '1-1'
-},
 content: [
 {
 type: 'column',
 content: [
 {
 type: 'paragraph',
-content: [{ type: 'text', text: 'Nested 1' }]
-}
-]
-},
-{
-type: 'column',
-content: [
-{
-type: 'paragraph',
-content: [{ type: 'text', text: 'Nested 2' }]
-}
-]
-}
-]
+content: [{ type: 'text', text: 'Click the link button without selecting text' }]
 }
 ]
 }
@@ -945,18 +860,41 @@ content: [{ type: 'text', text: 'Nested 2' }]
 ]
 };
 
-// Usage:
-<SlideEditor content={test9Content} slideTheme="default" />
+function NoSelectionTest() {
+const editorRef = useRef<SlideEditorRef>(null);
+
+const handleAddLink = () => {
+if (editorRef.current?.view) {
+const result = actions.addLink(editorRef.current.view, 'https://example.com');
+if (!result) {
+alert('Cannot add link: no text selected (this is expected)');
+}
+}
+};
+
+return (
+
+<div style={{ padding: '20px' }}>
+<button onClick={handleAddLink}>Try to Add Link (without selection)</button>
+<SlideEditor ref={editorRef} content={emptyContent} />
+</div>
+);
+}
 
 // EXPECTED RESULT:
-// - Outer row: First column 66.66%, second column 33.33%
-// - Nested row inside second column: Two equal columns
+// - Console warning: "Cannot add link: no text selected"
+// - Alert shows explaining no text was selected
+// - Editor does not error or break
 
 // ---
 
-// TEST 10: Multiple Slides with Different Themes Applied
+// TEST 5: Multiple Marks on Same Text
+// File: demo/src/MultipleMarksTest.tsx
 
-const test10Content = {
+import React, { useRef, useState } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+const testContent = {
 type: 'doc',
 content: [
 {
@@ -969,49 +907,10 @@ content: [
 type: 'column',
 content: [
 {
-type: 'heading',
-attrs: { level: 1 },
-content: [{ type: 'text', text: 'Slide 1' }]
-}
-]
-}
-]
-}
-]
-},
-{
-type: 'slide',
+type: 'paragraph',
 content: [
-{
-type: 'row',
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 1 },
-content: [{ type: 'text', text: 'Slide 2' }]
-}
+{ type: 'text', text: 'Select this text and apply multiple formats' }
 ]
-}
-]
-}
-]
-},
-{
-type: 'slide',
-content: [
-{
-type: 'row',
-content: [
-{
-type: 'column',
-content: [
-{
-type: 'heading',
-attrs: { level: 1 },
-content: [{ type: 'text', text: 'Slide 3' }]
 }
 ]
 }
@@ -1022,209 +921,517 @@ content: [{ type: 'text', text: 'Slide 3' }]
 ]
 };
 
-// Usage:
-<SlideEditor content={test10Content} slideTheme="gradient" />
+function MultipleMarksTest() {
+const editorRef = useRef<SlideEditorRef>(null);
+const [content, setContent] = useState(testContent);
 
-// EXPECTED RESULT: All three slides have gradient theme applied
+return (
+
+<div style={{ padding: '20px' }}>
+<div style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}>
+<button onClick={() => editorRef.current?.view && actions.bold(editorRef.current.view)}>
+Bold
+</button>
+<button onClick={() => editorRef.current?.view && actions.italic(editorRef.current.view)}>
+Italic
+</button>
+<button onClick={() => {
+const url = prompt('URL:');
+if (url && editorRef.current?.view) {
+actions.addLink(editorRef.current.view, url);
+}
+}}>
+Link
+</button>
+</div>
+<p style={{ fontSize: '14px', color: '#666' }}>
+Test: Select text, make it bold, then italic, then add a link. All should work together.
+</p>
+<SlideEditor ref={editorRef} content={content} onChange={setContent} />
+</div>
+);
+}
+
+// EXPECTED RESULT:
+// - Can apply bold to selected text
+// - Can then apply italic to same text (now bold + italic)
+// - Can then add link to same text (now bold + italic + link)
+// - All three marks work together
+// - Can remove any mark individually
 
 // ================== IMPLEMENTATION CHECKLIST ==================
 
 /\*
 COMPLETE THESE STEPS IN ORDER:
 
-☑ Step 1: Update SlideEditor.tsx interface
+□ Step 1: Install dependencies
 
-- Add slideTheme?: string to SlideEditorProps
+- Run: npm install prosemirror-commands prosemirror-history prosemirror-keymap
+- Verify no installation errors
 
-☑ Step 2: Update SlideEditor component
+□ Step 2: Create actions utility
 
-- Add slideTheme parameter with default 'default'
-- Update editorClassName to include slide-theme-{slideTheme}
+- Create src/actions/index.ts
+- Implement undoAction function
+- Implement redoAction function
+- Implement boldAction function
+- Implement italicAction function
+- Implement addLinkAction function
+- Implement removeLinkAction function
+- Implement isBoldActive function
+- Implement isItalicActive function
+- Implement isLinkActive function
+- Implement getLinkHref function
+- Export actions object with all functions
 
-☑ Step 3: Add slide theme CSS to styles.css
+□ Step 3: Update SlideEditor component
 
-- Add .slide-theme-default styles
-- Add .slide-theme-dark styles
-- Add .slide-theme-minimal styles
-- Add .slide-theme-gradient styles
+- Add imports for history, keymap, commands
+- Add forwardRef wrapper
+- Create SlideEditorRef type
+- Add useImperativeHandle to expose view
+- Add plugins array with history and keymap
+- Pass plugins to EditorState.create
+- Add displayName to component
 
-☑ Step 4: Create src/utils/layoutParser.ts
+□ Step 4: Update main exports
 
-- Implement parseLayout function
-- Implement applyLayoutToRow function
-- Implement applyAllLayouts function
-- Add comprehensive JSDoc comments
+- Export SlideEditorRef type from index.ts
+- Export actions from index.ts
 
-☑ Step 5: Update SlideEditor.tsx to use layout parser
+□ Step 5: Create test demos
 
-- Import applyAllLayouts
-- Apply layouts in first useEffect (after mount)
-- Add second useEffect for content changes
+- Create demo/src/ToolbarDemo.tsx
+- Create demo/src/AdvancedToolbar.tsx
+- Create demo/src/NoSelectionTest.tsx
+- Create demo/src/MultipleMarksTest.tsx
+- Import and render in demo/src/App.tsx
 
-☑ Step 6: Verify column display attribute CSS
+□ Step 6: Test all functionality
 
-- Check that all content mode styles exist
-- Check that all vertical alignment styles exist
-- Check that all horizontal alignment styles exist
-- Check that all padding styles exist
-
-☑ Step 7: Test all scenarios
-
-- Test slideTheme prop with all 4 built-in themes
-- Test layout system with various ratios
-- Test invalid layouts (verify console warnings)
-- Test column display attributes
-- Test nested rows
-- Test multiple slides
+- Test undo/redo with buttons
+- Test undo/redo with keyboard (Cmd/Ctrl+Z, Cmd/Ctrl+Y)
+- Test bold toggle
+- Test italic toggle
+- Test add link
+- Test remove link
+- Test multiple marks on same text
+- Test actions with no selection (should warn)
+- Test active state detection (isBoldActive, etc.)
+- Test getLinkHref function
+- Verify console warnings appear appropriately
+- Verify no unexpected errors
 
 VERIFICATION:
-After implementation, run all 10 tests above and verify:
-✓ SlideTheme applies to all slides
-✓ Layouts calculate correctly
-✓ Invalid layouts fall back to equal distribution
-✓ Console warnings appear for invalid layouts
-✓ Column display attributes work
-✓ Nested rows work independently
-✓ No errors in console (except expected warnings)
+After implementation, verify:
+✓ All actions are exported from autoartifacts
+✓ SlideEditor exposes view via ref
+✓ Undo/redo work via both buttons and keyboard
+✓ Bold/italic toggle correctly
+✓ Links can be added and removed
+✓ Multiple marks work together
+✓ Active state detection works
+✓ Console warnings appear for invalid operations
+✓ No TypeScript errors
+✓ No runtime errors
 \*/
-
-// ================== SUCCESS CRITERIA ==================
-
-/\*
-WHEN COMPLETE, THE FOLLOWING SHOULD ALL WORK:
-
-1. SLIDETHEME PROP:
-   ✓ <SlideEditor slideTheme="default" /> applies white theme to all slides
-   ✓ <SlideEditor slideTheme="dark" /> applies dark theme to all slides
-   ✓ <SlideEditor slideTheme="minimal" /> applies minimal theme to all slides
-   ✓ <SlideEditor slideTheme="gradient" /> applies gradient theme to all slides
-   ✓ <SlideEditor slideTheme="my-custom" /> allows custom theme with developer CSS
-   ✓ slideTheme applies globally without modifying individual slides in JSON
-
-2. LAYOUT SYSTEM:
-   ✓ layout="2-1" creates 66.66% / 33.33% split
-   ✓ layout="1-1" creates 50% / 50% split
-   ✓ layout="1-1-1" creates three equal columns
-   ✓ layout="5-3-2" creates 50% / 30% / 20% split
-   ✓ Any valid ratio string works (e.g., '7-2-1', '10-5-3-2')
-   ✓ Invalid layout formats trigger console warning and fallback
-   ✓ Column count mismatch triggers console warning and fallback
-   ✓ Empty/missing layout uses equal distribution (no warning)
-   ✓ Layouts apply on initial mount
-   ✓ Layouts re-apply when content prop changes
-   ✓ Nested rows calculate layouts independently
-
-3. COLUMN DISPLAY ATTRIBUTES:
-   ✓ contentMode="cover" makes images fill entire column
-   ✓ contentMode="contain" makes images fit within column
-   ✓ verticalAlign="top" aligns content to top
-   ✓ verticalAlign="center" centers content vertically
-   ✓ verticalAlign="bottom" aligns content to bottom
-   ✓ horizontalAlign="left" aligns content to left
-   ✓ horizontalAlign="center" centers content horizontally
-   ✓ horizontalAlign="right" aligns content to right
-   ✓ padding="none" removes all padding
-   ✓ padding="small" applies 12px padding
-   ✓ padding="medium" applies 20px padding
-   ✓ padding="large" applies 32px padding
-   ✓ Multiple attributes work together (e.g., center + large padding)
-
-4. OVERALL QUALITY:
-   ✓ No TypeScript errors
-   ✓ No runtime errors (except expected validation warnings)
-   ✓ Clean console (only intentional warnings for invalid layouts)
-   ✓ Code is well-commented and maintainable
-   ✓ Follows existing code patterns and style
-   ✓ All imports are correct
-   ✓ No unused variables or code
-   \*/
 
 // ================== TROUBLESHOOTING GUIDE ==================
 
 /\*
 IF SOMETHING DOESN'T WORK:
 
-ISSUE: SlideTheme not applying
+ISSUE: "Cannot find module 'prosemirror-history'" or similar
 SOLUTION:
 
-- Check that slideTheme prop is being passed correctly
-- Verify className includes "slide-theme-{theme}" in browser devtools
-- Check that CSS file has .slide-theme-{theme} .slide selector
-- Make sure CSS is imported in SlideEditor.tsx
+- Verify you ran npm install for all three packages
+- Check package.json has prosemirror-history, prosemirror-commands, prosemirror-keymap
+- Try deleting node_modules and package-lock.json, then npm install again
+- Restart your dev server
 
-ISSUE: Layouts not applying
+ISSUE: Undo/redo doesn't work
 SOLUTION:
 
-- Check browser console for any errors
-- Verify data-layout attribute exists on row elements in devtools
-- Check that layoutParser.ts is created and exported correctly
-- Verify applyAllLayouts is being called in useEffect
-- Try adding console.log in applyLayoutToRow to debug
-- Check that columns have data-node-type="column"
+- Verify history() plugin is in the plugins array
+- Check that plugins array is passed to EditorState.create
+- Verify keymap is set up with undo/redo shortcuts
+- Check browser console for errors
+- Try clicking in the editor to focus it first
 
-ISSUE: Console warnings appearing incorrectly
+ISSUE: "Cannot read property 'view' of null" when clicking toolbar buttons
 SOLUTION:
 
-- Verify layout string format matches /^\d+(-\d+)\*$/
-- Count columns in JSON vs layout string segments
-- Check for typos in layout attribute
+- Verify ref is being passed to SlideEditor: <SlideEditor ref={editorRef} />
+- Check that useRef has correct type: useRef<SlideEditorRef>(null)
+- Ensure forwardRef is wrapping the component correctly
+- Verify useImperativeHandle is exposing the view
 
-ISSUE: Column display attributes not working
+ISSUE: Bold/italic buttons do nothing
 SOLUTION:
 
-- Verify attrs are in column node JSON
-- Check that toDOM is applying classes correctly
-- Inspect element in devtools to see actual classes
-- Verify CSS selectors match (e.g., .column.v-align-center)
+- Check that marks are defined in schema (bold, italic)
+- Verify text is selected before clicking button
+- Check console for warnings about missing mark types
+- Inspect the transaction in browser devtools
 
-ISSUE: Nested rows not working
+ISSUE: addLink doesn't work
 SOLUTION:
 
-- Verify column content allows 'block+ | row+'
-- Check that nested row has data-layout attribute
-- Verify applyAllLayouts finds nested rows (use querySelectorAll)
+- Verify text is selected (link needs selection)
+- Check that href parameter is being passed
+- Verify link mark is in schema
+- Check console for "no text selected" warning
 
-ISSUE: Layouts not re-applying after content changes
+ISSUE: Active state (isBoldActive) always returns false
 SOLUTION:
 
-- Check second useEffect has [content] dependency
-- Verify content prop is actually changing (new reference)
-- Try forcing re-render by changing key prop on SlideEditor
-- Check setTimeout is completing before next update
+- Verify the selection has the mark
+- Check that isMarkActive helper function is working
+- Try selecting text that definitely has the mark
+- Check browser console for errors
+
+ISSUE: Keyboard shortcuts don't work
+SOLUTION:
+
+- Verify keymap plugin is in plugins array
+- Check that editor has focus (click in it first)
+- Try different keyboard combinations (Cmd on Mac, Ctrl on Windows)
+- Check browser console for errors
+- Verify baseKeymap is imported and added
+
+ISSUE: Actions cause editor to crash
+SOLUTION:
+
+- Check that view is not null before calling actions
+- Verify transaction is being dispatched correctly
+- Check browser console for specific error message
+- Try wrapping action calls in try-catch for debugging
+
+ISSUE: TypeScript errors about types
+SOLUTION:
+
+- Verify SlideEditorRef type is exported
+- Check that EditorView is imported from prosemirror-view
+- Verify forwardRef has correct type parameters
+- Make sure all ProseMirror types are installed (@types packages)
   \*/
+
+// ================== USAGE EXAMPLES FOR DOCUMENTATION ==================
+
+/_
+These examples show developers how to use the Actions API
+_/
+
+// EXAMPLE 1: Simple Toolbar
+/\*
+import { useRef } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+function MyEditor() {
+const editorRef = useRef<SlideEditorRef>(null);
+
+return (
+
+<div>
+<div className="toolbar">
+<button onClick={() => actions.undo(editorRef.current?.view)}>
+Undo
+</button>
+<button onClick={() => actions.redo(editorRef.current?.view)}>
+Redo
+</button>
+<button onClick={() => actions.bold(editorRef.current?.view)}>
+Bold
+</button>
+<button onClick={() => actions.italic(editorRef.current?.view)}>
+Italic
+</button>
+</div>
+<SlideEditor ref={editorRef} content={myContent} />
+</div>
+);
+}
+\*/
+
+// EXAMPLE 2: Toolbar with Active States
+/\*
+import { useRef, useState, useEffect } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+function SmartToolbar() {
+const editorRef = useRef<SlideEditorRef>(null);
+const [isBold, setIsBold] = useState(false);
+const [isItalic, setIsItalic] = useState(false);
+
+useEffect(() => {
+// Update active states periodically
+const interval = setInterval(() => {
+if (editorRef.current?.view) {
+setIsBold(actions.isBoldActive(editorRef.current.view));
+setIsItalic(actions.isItalicActive(editorRef.current.view));
+}
+}, 100);
+return () => clearInterval(interval);
+}, []);
+
+return (
+
+<div>
+<button
+onClick={() => actions.bold(editorRef.current?.view)}
+style={{ fontWeight: isBold ? 'bold' : 'normal' }} >
+B
+</button>
+<button
+onClick={() => actions.italic(editorRef.current?.view)}
+style={{ fontStyle: isItalic ? 'italic' : 'normal' }} >
+I
+</button>
+<SlideEditor ref={editorRef} content={myContent} />
+</div>
+);
+}
+\*/
+
+// EXAMPLE 3: Link Dialog
+/\*
+import { useRef, useState } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+function LinkToolbar() {
+const editorRef = useRef<SlideEditorRef>(null);
+const [showLinkDialog, setShowLinkDialog] = useState(false);
+const [linkUrl, setLinkUrl] = useState('');
+
+const handleAddLink = () => {
+if (linkUrl && editorRef.current?.view) {
+actions.addLink(editorRef.current.view, linkUrl);
+setShowLinkDialog(false);
+setLinkUrl('');
+}
+};
+
+return (
+
+<div>
+<button onClick={() => setShowLinkDialog(true)}>Add Link</button>
+
+      {showLinkDialog && (
+        <div className="dialog">
+          <input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="https://example.com"
+          />
+          <button onClick={handleAddLink}>Add</button>
+          <button onClick={() => setShowLinkDialog(false)}>Cancel</button>
+        </div>
+      )}
+
+      <SlideEditor ref={editorRef} content={myContent} />
+    </div>
+
+);
+}
+\*/
+
+// EXAMPLE 4: Custom Keyboard Shortcuts
+/\*
+import { useRef, useEffect } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+function EditorWithShortcuts() {
+const editorRef = useRef<SlideEditorRef>(null);
+
+useEffect(() => {
+const handleKeyDown = (e: KeyboardEvent) => {
+if (!editorRef.current?.view) return;
+
+      // Custom shortcuts
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === 'b') {
+          e.preventDefault();
+          actions.bold(editorRef.current.view);
+        } else if (e.key === 'i') {
+          e.preventDefault();
+          actions.italic(editorRef.current.view);
+        } else if (e.key === 'k') {
+          e.preventDefault();
+          const url = prompt('Enter URL:');
+          if (url) actions.addLink(editorRef.current.view, url);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+
+}, []);
+
+return <SlideEditor ref={editorRef} content={myContent} />;
+}
+\*/
+
+// EXAMPLE 5: Programmatic Formatting
+/\*
+import { useRef } from 'react';
+import { SlideEditor, actions, SlideEditorRef } from 'autoartifacts';
+
+function AutoFormattingEditor() {
+const editorRef = useRef<SlideEditorRef>(null);
+
+const handleContentChange = (newContent: any) => {
+// Auto-format: if user types a URL, auto-link it
+// This is just a conceptual example
+if (editorRef.current?.view) {
+const view = editorRef.current.view;
+const text = view.state.doc.textContent;
+
+      if (text.includes('http://') || text.includes('https://')) {
+        // Could implement auto-linking logic here
+        console.log('URL detected, could auto-link');
+      }
+    }
+
+};
+
+return (
+<SlideEditor 
+      ref={editorRef} 
+      content={myContent}
+      onChange={handleContentChange}
+    />
+);
+}
+\*/
+
+// ================== API REFERENCE ==================
+
+/\*
+ACTIONS API REFERENCE:
+
+actions.undo(view: EditorView | null): boolean
+
+- Undoes the last change
+- Returns true if successful, false if nothing to undo
+- Also accessible via Cmd/Ctrl+Z
+
+actions.redo(view: EditorView | null): boolean
+
+- Redoes the last undone change
+- Returns true if successful, false if nothing to redo
+- Also accessible via Cmd/Ctrl+Y or Cmd/Ctrl+Shift+Z
+
+actions.bold(view: EditorView | null): boolean
+
+- Toggles bold mark on current selection
+- If text is bold, removes bold; if not bold, adds bold
+- Returns true if successful
+
+actions.italic(view: EditorView | null): boolean
+
+- Toggles italic mark on current selection
+- If text is italic, removes italic; if not italic, adds italic
+- Returns true if successful
+
+actions.addLink(view: EditorView | null, href: string, title?: string): boolean
+
+- Adds link mark to current selection
+- Requires text to be selected (returns false if no selection)
+- href: The URL for the link (required)
+- title: Optional title attribute
+- Returns true if successful
+
+actions.removeLink(view: EditorView | null): boolean
+
+- Removes link mark from current selection
+- Returns true if successful
+
+actions.isBoldActive(view: EditorView | null): boolean
+
+- Checks if bold mark is active in current selection
+- Returns true if bold is active, false otherwise
+
+actions.isItalicActive(view: EditorView | null): boolean
+
+- Checks if italic mark is active in current selection
+- Returns true if italic is active, false otherwise
+
+actions.isLinkActive(view: EditorView | null): boolean
+
+- Checks if link mark is active in current selection
+- Returns true if link is active, false otherwise
+
+actions.getLinkHref(view: EditorView | null): string | null
+
+- Gets the href of the link at current selection
+- Returns href string if link is active, null otherwise
+
+SLIDEEDITOR REF:
+
+interface SlideEditorRef {
+view: EditorView | null;
+}
+
+Usage:
+const editorRef = useRef<SlideEditorRef>(null);
+<SlideEditor ref={editorRef} ... />
+// Access view: editorRef.current?.view
+\*/
 
 // ================== FINAL NOTES ==================
 
 /\*
-IMPORTANT REMINDERS:
+IMPORTANT NOTES:
 
-1. The setTimeout in useEffect is necessary because ProseMirror
-   may not have finished rendering the DOM when the effect runs.
-   The 0ms delay ensures we're in the next event loop tick.
+1. HISTORY PLUGIN
+   The history plugin tracks all changes to the document. It maintains
+   an undo/redo stack automatically. You don't need to manage this manually.
 
-2. Console warnings are INTENTIONAL for invalid layouts.
-   This helps developers debug their JSON structure.
+2. KEYBOARD SHORTCUTS
+   The keymap plugin automatically handles Cmd/Ctrl+Z and Cmd/Ctrl+Y.
+   These work globally when the editor has focus. No additional setup needed.
 
-3. The layout parser is defensive - it always falls back to
-   equal distribution rather than breaking the UI.
+3. MARKS VS NODES
+   Actions work on marks (text-level formatting), not nodes.
+   For node operations (adding slides, images, etc.), you'll need
+   different actions in the future.
 
-4. Column display attributes are already implemented from
-   previous work - this implementation just verifies they work.
+4. EDITORVIEW REF
+   The EditorView is exposed via ref so developers can build custom
+   toolbars and controls. It's the key to programmatic editor control.
 
-5. SlideTheme applies via CSS cascade, so custom classes on
-   individual slides can override if needed.
+5. NULL SAFETY
+   All actions check if view is null before operating. This prevents
+   crashes if someone calls an action before the editor is mounted.
 
-6. Post-MVP will add theme objects, but for now CSS-only
-   keeps it simple and familiar to developers.
+6. CONSOLE WARNINGS
+   Actions log warnings for invalid operations (e.g., adding link with
+   no selection). This helps developers debug their toolbar implementations.
 
-WHAT'S NEXT (NOT IN THIS IMPLEMENTATION):
+7. RETURN VALUES
+   All actions return boolean - true if successful, false if not.
+   Developers can use this for UI feedback (disable buttons, show errors, etc.).
 
-- Actions API (undo, redo, formatting commands)
-- Additional component props (editorMode, onSlideChange, etc.)
-- JSON validation
-- TypeScript type exports
-- Error boundaries
-- Keyboard shortcuts
+8. ACTIVE STATE
+   The is\*Active functions are useful for toolbar buttons that need to
+   show which marks are currently applied. Update these on selection change.
 
-These will be separate implementations after this one is complete.
-\*/
+POST-MVP FEATURES (NOT IN THIS IMPLEMENTATION):
+
+- More mark actions (underline, strikethrough, colors, etc.)
+- Node actions (addSlide, deleteSlide, addImage, etc.)
+- Selection actions (selectAll, selectSlide, etc.)
+- Navigation actions (nextSlide, prevSlide, goToSlide)
+- Export actions (toHTML, toPDF, etc.)
+- Batch actions (applyMultipleMarks, etc.)
+
+These will be added in future phases as needed.
+
+WHAT'S NEXT:
+After Actions API is complete, implement:
+
+1. Component Props (editorMode, onSlideChange, currentSlide, readOnly, onError)
+2. Validation & Types (JSON validation, TypeScript types)
+3. Post-MVP features from the roadmap
+   \*/

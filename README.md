@@ -5,7 +5,9 @@ A powerful slide editor component built with ProseMirror for creating rich, inte
 ## ✨ Features
 
 ### 🎨 Slide Themes
+
 Apply consistent styling to all slides with a single prop:
+
 - **Default** - Clean white with subtle border and shadow
 - **Dark** - Dark background with light text
 - **Minimal** - No borders or shadows, just content
@@ -17,7 +19,9 @@ Apply consistent styling to all slides with a single prop:
 ```
 
 ### 📐 Flexible Layout System
+
 Create responsive column layouts with intuitive ratio strings:
+
 - `'2-1'` - Two columns (66.66% / 33.33%)
 - `'1-1-1'` - Three equal columns
 - `'5-3-2'` - Complex ratios (50% / 30% / 20%)
@@ -32,7 +36,9 @@ Create responsive column layouts with intuitive ratio strings:
 ```
 
 ### 🎯 Column Display Attributes
+
 Fine-tune how content appears in columns:
+
 - **Content Mode**: `cover`, `contain`, `default`
 - **Vertical Align**: `top`, `center`, `bottom`
 - **Horizontal Align**: `left`, `center`, `right`
@@ -52,6 +58,7 @@ Fine-tune how content appears in columns:
 ```
 
 ### 📝 Rich Text Formatting
+
 - **Basic**: Bold, italic, underline, strikethrough
 - **Links**: With href, title, and target support
 - **Code**: Inline code blocks
@@ -60,6 +67,7 @@ Fine-tune how content appears in columns:
 - **Advanced**: Superscript, subscript, text shadow, letter spacing, line height
 
 ### 📦 Media Support
+
 - **Images**: Multiple display modes (cover, contain, fill) and alignment
 - **Videos**: Embedded YouTube, Vimeo with aspect ratio control
 - **Lists**: Bullet lists and ordered lists with nesting support
@@ -114,7 +122,7 @@ const content = {
 
 function MyApp() {
   return (
-    <SlideEditor 
+    <SlideEditor
       content={content}
       slideTheme="dark"
       onChange={(json) => console.log('Updated:', json)}
@@ -139,6 +147,7 @@ npm run dev
 ```
 
 Open `http://localhost:5173` to view the comprehensive test suite with 11 different test cases showcasing:
+
 - All 4 built-in themes
 - Various layout ratios
 - Column display attributes
@@ -163,13 +172,13 @@ npm run build
 
 ### SlideEditor
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `content` | `any` | Required | ProseMirror JSON document |
-| `onChange` | `(json: any) => void` | `undefined` | Callback when content changes |
-| `editorTheme` | `'light' \| 'dark' \| 'presentation' \| string` | `'light'` | Editor wrapper theme |
-| `editorStyles` | `string` | `''` | Additional CSS classes for editor |
-| `slideTheme` | `string` | `'default'` | Theme applied to all slides |
+| Prop           | Type                                            | Default     | Description                       |
+| -------------- | ----------------------------------------------- | ----------- | --------------------------------- |
+| `content`      | `any`                                           | Required    | ProseMirror JSON document         |
+| `onChange`     | `(json: any) => void`                           | `undefined` | Callback when content changes     |
+| `editorTheme`  | `'light' \| 'dark' \| 'presentation' \| string` | `'light'`   | Editor wrapper theme              |
+| `editorStyles` | `string`                                        | `''`        | Additional CSS classes for editor |
+| `slideTheme`   | `string`                                        | `'default'` | Theme applied to all slides       |
 
 ## 🎯 Layout System
 
