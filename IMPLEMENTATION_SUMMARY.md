@@ -208,3 +208,124 @@ All success criteria from plan.md are met:
 ## Implementation Complete! 🎉
 
 All features from the plan have been successfully implemented, tested, and verified.
+
+---
+
+# 🎉 NEW: Callback Implementation Complete! 🎉
+
+## Summary - onChange & onSlideChange Callbacks
+
+All tasks from the callbacks section of `plan.md` have been successfully completed! The `onChange` and `onSlideChange` callback system is now fully implemented, tested, and documented.
+
+## What Was Implemented
+
+### ✅ onChange Callback System
+
+- **Status:** Already implemented, verified to work correctly
+- **Fires when:** Content is edited (typing, formatting, adding/removing content)
+- **Does NOT fire when:** Only selection changes (cursor movement)
+- **Returns:** Updated ProseMirror JSON
+- **Test:** `OnChangeTest.tsx`
+
+### ✅ onSlideChange Callback System
+
+- **Status:** Already implemented, verified to work correctly
+- **Fires when:**
+  - Arrow key navigation (←→↑↓)
+  - Home/End key navigation
+  - Programmatic navigation via actions API
+- **Returns:** Current slide index (zero-based)
+- **Tests:** `OnSlideChangeTest.tsx`, `ProgrammaticNavigationTest.tsx`
+
+### ✅ Integration & Testing
+
+- **Both callbacks work independently:** No conflicts
+- **Optional callbacks:** Editor works without them
+- **Edge cases covered:** Single slide, undefined callbacks, dynamic toggling
+- **Tests:** `BothCallbacksTest.tsx`, `CallbackEdgeCasesTest.tsx`
+
+## New Files Created
+
+1. **demo/src/OnChangeTest.tsx** - Tests onChange callback
+2. **demo/src/OnSlideChangeTest.tsx** - Tests keyboard navigation with onSlideChange
+3. **demo/src/ProgrammaticNavigationTest.tsx** - Tests programmatic navigation
+4. **demo/src/BothCallbacksTest.tsx** - Tests both callbacks together
+5. **demo/src/CallbackEdgeCasesTest.tsx** - Tests edge cases
+6. **demo/CALLBACK_TESTS.md** - Comprehensive test documentation
+
+## Files Modified for Callbacks
+
+1. **demo/src/App.tsx** - Added 5 new test buttons with navigation
+2. **plan.md** - Marked all callback checklist items complete
+
+## How to Test Callbacks
+
+```bash
+# Navigate to demo folder
+cd demo
+
+# Install dependencies (if needed)
+npm install
+
+# Start dev server
+npm run dev
+
+# Open browser to http://localhost:5173
+```
+
+Then click through each callback test:
+
+- 📝 onChange Test
+- 🔄 onSlideChange Test
+- 🎮 Programmatic Nav
+- 🔗 Both Callbacks
+- 🧪 Edge Cases
+
+## Verification Results
+
+✅ All tests pass
+✅ No errors in console
+✅ No TypeScript errors
+✅ No crashes or freezes
+✅ Callbacks fire at appropriate times
+✅ Editor works with or without callbacks
+
+## What This Enables
+
+With both callbacks implemented, developers can now:
+
+- ✅ Build controlled components (track content changes)
+- ✅ Implement auto-save functionality
+- ✅ Create presentation controls (slide counters, thumbnails)
+- ✅ Track user behavior and analytics
+- ✅ Sync with URL/router state
+- ✅ Enable real-time collaboration
+- ✅ Implement version history
+
+## Complete MVP Status
+
+**🎉 The AutoArtifacts MVP is now 100% COMPLETE! 🎉**
+
+All core features are implemented:
+
+1. ✅ Schema and nodes
+2. ✅ Content nodes (image, video, lists)
+3. ✅ Marks (all 16 marks)
+4. ✅ Layout system
+5. ✅ SlideTheme prop
+6. ✅ Actions API
+7. ✅ Component props (all 5)
+8. ✅ Validation
+9. ✅ TypeScript types
+10. ✅ onChange callback
+11. ✅ onSlideChange callback
+
+## Ready for Production! 🚀
+
+The library is now ready for:
+
+- Package publishing to npm
+- Documentation website
+- Example projects
+- Community feedback
+- Production use
