@@ -964,12 +964,12 @@ Test: Select text, make it bold, then italic, then add a link. All should work t
 /\*
 COMPLETE THESE STEPS IN ORDER:
 
-□ Step 1: Install dependencies
+☑ Step 1: Install dependencies
 
 - Run: npm install prosemirror-commands prosemirror-history prosemirror-keymap
 - Verify no installation errors
 
-□ Step 2: Create actions utility
+☑ Step 2: Create actions utility
 
 - Create src/actions/index.ts
 - Implement undoAction function
@@ -984,7 +984,7 @@ COMPLETE THESE STEPS IN ORDER:
 - Implement getLinkHref function
 - Export actions object with all functions
 
-□ Step 3: Update SlideEditor component
+☑ Step 3: Update SlideEditor component
 
 - Add imports for history, keymap, commands
 - Add forwardRef wrapper
@@ -994,12 +994,12 @@ COMPLETE THESE STEPS IN ORDER:
 - Pass plugins to EditorState.create
 - Add displayName to component
 
-□ Step 4: Update main exports
+☑ Step 4: Update main exports
 
 - Export SlideEditorRef type from index.ts
 - Export actions from index.ts
 
-□ Step 5: Create test demos
+☑ Step 5: Create test demos
 
 - Create demo/src/ToolbarDemo.tsx
 - Create demo/src/AdvancedToolbar.tsx
@@ -1007,7 +1007,7 @@ COMPLETE THESE STEPS IN ORDER:
 - Create demo/src/MultipleMarksTest.tsx
 - Import and render in demo/src/App.tsx
 
-□ Step 6: Test all functionality
+☑ Step 6: Test all functionality
 
 - Test undo/redo with buttons
 - Test undo/redo with keyboard (Cmd/Ctrl+Z, Cmd/Ctrl+Y)

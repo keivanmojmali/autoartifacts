@@ -11,6 +11,9 @@
   "dependencies": {
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "prosemirror-commands": "^1.7.1",
+    "prosemirror-history": "^1.4.1",
+    "prosemirror-keymap": "^1.2.3",
     "prosemirror-model": "^1.25.3",
     "prosemirror-schema-basic": "^1.2.4",
     "prosemirror-state": "^1.4.3",
