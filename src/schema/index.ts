@@ -1,6 +1,6 @@
 import { Schema } from "prosemirror-model";
-import { marks } from "prosemirror-schema-basic";
 import { nodes } from "./nodes";
+import { marks } from "./marks";
 
 export const schema = new Schema({
   nodes,

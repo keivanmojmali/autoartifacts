@@ -203,3 +203,54 @@ img[data-align="right"] {
 .ProseMirror-selectednode {
   outline: none;
 }
+
+/* Phase 1: MVP mark styles */
+strong {
+  font-weight: 600;
+}
+
+em {
+  font-style: italic;
+}
+
+u {
+  text-decoration: underline;
+}
+
+s {
+  text-decoration: line-through;
+}
+
+code.inline-code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+a {
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+a:hover {
+  color: #1d4ed8;
+}
+
+/* Phase 2: Post-MVP mark styles */
+sup {
+  vertical-align: super;
+  font-size: 0.75em;
+}
+
+sub {
+  vertical-align: sub;
+  font-size: 0.75em;
+}
+
+mark {
+  padding: 2px 4px;
+  border-radius: 2px;
+}
