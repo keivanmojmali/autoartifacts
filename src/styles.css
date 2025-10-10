@@ -32,17 +32,18 @@
 }
 
 .autoartifacts-editor.theme-light .slide {
-  background: #f9fafb;
+  background: #ffffff;
+  color: #000000;
 }
 
 /* Dark theme */
 .autoartifacts-editor.theme-dark {
-  background: #1e293b;
+  background: #000000;
 }
 
 .autoartifacts-editor.theme-dark .slide {
-  background: #0f172a;
-  color: #f1f5f9;
+  background: #000000;
+  color: #ffffff;
 }
 
 /* Presentation theme */
@@ -271,21 +272,32 @@ mark {
 /* ==================== SLIDE THEMES ==================== */
 /* These apply to ALL slides when slideTheme prop is set */
 
-/* Default Theme - Clean white with subtle border */
+/* Default Theme - Pure white background with black text */
 .autoartifacts-editor.slide-theme-default .slide {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  color: #000000;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* Dark Theme - Dark background with light text */
+.autoartifacts-editor.slide-theme-default .slide h1,
+.autoartifacts-editor.slide-theme-default .slide h2,
+.autoartifacts-editor.slide-theme-default .slide h3,
+.autoartifacts-editor.slide-theme-default .slide h4,
+.autoartifacts-editor.slide-theme-default .slide h5,
+.autoartifacts-editor.slide-theme-default .slide h6,
+.autoartifacts-editor.slide-theme-default .slide p {
+  color: #000000;
+}
+
+/* Dark Theme - Pure black background with white text */
 .autoartifacts-editor.slide-theme-dark .slide {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  color: #f1f5f9;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .autoartifacts-editor.slide-theme-dark .slide h1,
@@ -293,42 +305,27 @@ mark {
 .autoartifacts-editor.slide-theme-dark .slide h3,
 .autoartifacts-editor.slide-theme-dark .slide h4,
 .autoartifacts-editor.slide-theme-dark .slide h5,
-.autoartifacts-editor.slide-theme-dark .slide h6 {
-  color: #f1f5f9;
-}
-
+.autoartifacts-editor.slide-theme-dark .slide h6,
 .autoartifacts-editor.slide-theme-dark .slide p {
-  color: #e2e8f0;
+  color: #ffffff;
 }
 
-/* Minimal Theme - No borders or shadows, just content */
+/* Minimal Theme - Same as default (white with black) */
 .autoartifacts-editor.slide-theme-minimal .slide {
   background: #ffffff;
+  color: #000000;
   border: none;
   border-radius: 0;
   box-shadow: none;
 }
 
-/* Gradient Theme - Purple gradient background */
+/* Gradient Theme - Removed, use dark or default instead */
 .autoartifacts-editor.slide-theme-gradient .slide {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
+  color: #000000;
   border: none;
-  border-radius: 12px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  color: #ffffff;
-}
-
-.autoartifacts-editor.slide-theme-gradient .slide h1,
-.autoartifacts-editor.slide-theme-gradient .slide h2,
-.autoartifacts-editor.slide-theme-gradient .slide h3,
-.autoartifacts-editor.slide-theme-gradient .slide h4,
-.autoartifacts-editor.slide-theme-gradient .slide h5,
-.autoartifacts-editor.slide-theme-gradient .slide h6 {
-  color: #ffffff;
-}
-
-.autoartifacts-editor.slide-theme-gradient .slide p {
-  color: #f3f4f6;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Custom themes: Developers can add their own like this:
